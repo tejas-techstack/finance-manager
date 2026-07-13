@@ -1,0 +1,6 @@
+# Backend + pipeline dependencies.
+# Install ONCE while online:  pip install -r backend/requirements.txt
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pdfplumber>=0.11
+pikepdf>=8.0

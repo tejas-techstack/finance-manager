@@ -1,0 +1,16 @@
+# python
+__pycache__/
+*.pyc
+backend/.venv/
+.venv/
+
+# data (never commit real statements or the ledger)
+data/inbox/*
+data/csv/*
+data/db.sqlite
+!data/inbox/.gitkeep
+!data/csv/.gitkeep
+data/.DS_Store
+
+# secrets — there is no .env by design, but just in case
+.env
