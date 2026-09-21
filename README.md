@@ -6,6 +6,37 @@ bank into a single deduplicated ledger, then shows it in a local dashboard.
 to run if it detects an internet connection. There is no ML model; the payee
 name is read straight out of the (structured) UPI transaction description.
 
+## ⚡ Just want to use it?
+
+Follow these five steps. Your statements never leave your machine.
+
+1. **One-time setup (needs internet, only this once):**
+   ```bash
+   python -m venv backend/.venv && source backend/.venv/bin/activate
+   pip install -r backend/requirements.txt
+   python setup.py
+   ```
+2. **Download your statement PDFs into `data/inbox/`**, and name each file with
+   its bank as a prefix so the app knows how to read it:
+   - SBI statements → `sbi_anything.pdf` (e.g. `sbi_jan2026.pdf`)
+   - Union Bank statements → `ubi_anything.pdf` (e.g. `ubi_q1.pdf`)
+
+   Only the `sbi_` / `ubi_` prefix matters; the rest of the name is up to you.
+3. **Go offline** — turn off Wi-Fi / unplug ethernet. (If you forget, step 4
+   refuses to run.)
+4. **Run everything with one command:**
+   ```bash
+   python run.py
+   ```
+   It asks each bank's PDF password (typed once, never written to disk), builds
+   the ledger, and opens the dashboard at <http://localhost:5173>. `Ctrl+C` stops it.
+5. **Your data stays private in git.** The folder is kept by `data/inbox/.gitkeep`,
+   but your **PDFs, the generated CSVs, and the database are all git-ignored** — so
+   you can safely `git commit` / `git push` and only the *code* is shared, never a
+   single transaction of yours. Nothing you push ties the project to your details.
+
+Everything below is the detailed reference.
+
 ## How it works
 
 ```
@@ -25,6 +56,28 @@ Two kinds of CSV are written under `data/csv/`:
   *before* any parsing. This is your ground truth: if a column looks wrong in the
   ledger, open this file to see what the scan actually produced.
 - `data/csv/<name>.csv` — the cleaned, per-bank normalised transactions.
+
+## The dashboard
+
+Everything is interactive and filters/sorts client-side:
+
+- **KPI cards + stat tiles** — spent, received, net, count, largest expense, avg
+  expense, largest credit, date range — all recomputed live as you filter.
+- **Filters** — full-text search, account, debit/credit, date range, and min/max
+  amount, with one-click reset.
+- **Sortable transactions** — click any column header (Date, Account, Merchant,
+  Description, Debit, Credit, Balance) to sort; click again to flip direction. A
+  footer shows the filtered debit/credit totals.
+- **Merchants panel** — each payee shows **Debit, Credit and Net** as separate
+  columns (so a two-way counterparty — e.g. transfers between your own SBI and
+  UBI — isn't collapsed into one net figure). Sort by any column; click a row to
+  filter the whole view to that merchant. Name variants are grouped (see below).
+- **By-account** split and a **monthly** spent-vs-received chart.
+
+Merchant names are grouped so variants of the same payee collapse into one:
+bank statements truncate names and sometimes add stray spaces, so `ZOMAT O`,
+`ZOMATO`, `ZOMATO L`, `ZOMATO LTD` all roll up to a single merchant. This is
+deterministic (space/punctuation-stripped + shared-prefix union) — no model.
 
 - **Two banks, two schemas** — each bank is one small config in
   [`backend/banks/`](backend/banks). Filename prefix picks the parser. Add a

@@ -82,11 +82,14 @@ def run_ingest(inbox: str, passwords: dict[str, str | None] | None = None,
         parsed.append((path, rows))
         all_rows.extend(rows)
 
-    # derive the merchant name deterministically from each description
+    # derive each merchant name from its description, then group variants of the
+    # same merchant (ZOMAT O / ZOMATO / ZOMATO L) onto one label
     if all_rows:
         import merchants
-        for r in all_rows:
-            r["merchant"] = merchants.extract_merchant(r["description"])
+        raw_names = [merchants.extract_merchant(r["description"]) for r in all_rows]
+        label = merchants.canonicalize(raw_names)
+        for r, name in zip(all_rows, raw_names):
+            r["merchant"] = label.get(name, name)
 
     inserted = 0
     for path, rows in parsed:
